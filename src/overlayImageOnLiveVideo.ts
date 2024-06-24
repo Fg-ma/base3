@@ -162,7 +162,6 @@ const overlayImageOnLiveVideo = (
   }
 
   // drawColorfulTriangles(ctx, overlayTriangles);
-  console.log(overlayTriangles, liveTriangles);
   // drawTexturedTriangles(ctx, overlayTriangles, liveTriangles, image);
 };
 
