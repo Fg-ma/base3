@@ -54,64 +54,68 @@ export default function MineThing() {
     };
   }, []);
 
-  const getCamera = async () => {
-    await navigator.mediaDevices
-      .getUserMedia({ video: true })
-      .then(async (stream) => {
+  const init = async () => {
+    // Setup video capture
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+    if (liveVideoRef.current) {
+      liveVideoRef.current.srcObject = stream;
+      await liveVideoRef.current.play().then(() => {
         if (liveVideoRef.current) {
-          liveVideoRef.current.srcObject = stream;
-          await liveVideoRef.current.play();
+          liveVideoRef.current.onloadedmetadata = () => {
+            if (liveVideoCanvasRef.current) {
+              liveVideoCanvasRef.current.width =
+                liveVideoRef.current!.videoWidth;
+              liveVideoCanvasRef.current.height =
+                liveVideoRef.current!.videoHeight;
+              liveVideoCtx.current =
+                liveVideoCanvasRef.current.getContext("2d");
+            }
+          };
         }
-      })
-      .catch((error) => {
-        console.error("Error accessing the camera:", error);
+
+        // Setup FaceMesh
+        const liveFaceMesh = new FaceMesh({
+          locateFile: (file) =>
+            `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+        });
+
+        liveFaceMesh.setOptions({
+          maxNumFaces: 1,
+          refineLandmarks: true,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5,
+        });
+
+        liveFaceMesh.onResults(onLiveResults);
+
+        if (liveVideoRef.current) {
+          const camera = new Camera(liveVideoRef.current, {
+            onFrame: async () => {
+              if (liveVideoRef.current) {
+                await liveFaceMesh.send({ image: liveVideoRef.current });
+              }
+            },
+            width: 640,
+            height: 480,
+          });
+          camera.start();
+        }
       });
+    }
   };
 
   useEffect(() => {
-    // Setup video capture
-    getCamera();
-
-    if (liveVideoRef.current) {
-      liveVideoRef.current.onloadedmetadata = () => {
-        if (liveVideoCanvasRef.current) {
-          liveVideoCanvasRef.current.width = liveVideoRef.current!.videoWidth;
-          liveVideoCanvasRef.current.height = liveVideoRef.current!.videoHeight;
-          liveVideoCtx.current = liveVideoCanvasRef.current.getContext("2d");
-        }
-      };
-    }
-
-    // Setup FaceMesh
-    const liveFaceMesh = new FaceMesh({
-      locateFile: (file) =>
-        `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
-    });
-
-    liveFaceMesh.setOptions({
-      maxNumFaces: 1,
-      refineLandmarks: true,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5,
-    });
-
-    liveFaceMesh.onResults(onLiveResults);
-
-    if (liveVideoRef.current) {
-      const camera = new Camera(liveVideoRef.current, {
-        onFrame: async () => {
-          if (liveVideoRef.current) {
-            await liveFaceMesh.send({ image: liveVideoRef.current });
-          }
-        },
-        width: 640,
-        height: 480,
-      });
-      camera.start();
-    }
+    init();
   }, []);
 
   const onLiveResults = (results: Results) => {
+    if (liveVideoCanvasRef.current && liveVideoRef.current) {
+      liveVideoCanvasRef.current.width = liveVideoRef.current.videoWidth;
+      liveVideoCanvasRef.current.height = liveVideoRef.current.videoHeight;
+      liveVideoCtx.current = liveVideoCanvasRef.current.getContext("2d");
+    }
+
     if (
       !liveVideoCanvasRef.current ||
       !liveVideoRef.current ||
@@ -143,9 +147,9 @@ export default function MineThing() {
       { ai: 297, uv: 5 },
       { ai: 103, uv: 6 },
       { ai: 332, uv: 7 },
-      { ai: 69, uv: 8 },
-      { ai: 108, uv: 9 },
-      { ai: 337, uv: 10 },
+      { ai: 108, uv: 8 },
+      { ai: 337, uv: 9 },
+      { ai: 69, uv: 10 },
       { ai: 299, uv: 11 },
       { ai: 151, uv: 12 },
       { ai: 54, uv: 13 },
@@ -156,8 +160,8 @@ export default function MineThing() {
       { ai: 298, uv: 18 },
       { ai: 21, uv: 19 },
       { ai: 251, uv: 20 },
-      { ai: 105, uv: 21 },
-      { ai: 66, uv: 22 },
+      { ai: 66, uv: 21 },
+      { ai: 105, uv: 22 },
       { ai: 296, uv: 23 },
       { ai: 334, uv: 24 },
       { ai: 107, uv: 25 },
@@ -173,27 +177,27 @@ export default function MineThing() {
       { ai: 282, uv: 35 },
       { ai: 53, uv: 36 },
       { ai: 283, uv: 37 },
-      { ai: 70, uv: 38 },
-      { ai: 300, uv: 39 },
+      { ai: 300, uv: 38 },
+      { ai: 70, uv: 39 },
       { ai: 55, uv: 40 },
       { ai: 285, uv: 41 },
       { ai: 8, uv: 42 },
       { ai: 46, uv: 43 },
       { ai: 276, uv: 44 },
-      { ai: 162, uv: 45 },
-      { ai: 389, uv: 46 },
+      { ai: 389, uv: 45 },
+      { ai: 162, uv: 46 },
       { ai: 223, uv: 47 },
       { ai: 443, uv: 48 },
-      { ai: 224, uv: 49 },
-      { ai: 444, uv: 50 },
+      { ai: 444, uv: 49 },
+      { ai: 224, uv: 50 },
       { ai: 222, uv: 51 },
       { ai: 442, uv: 52 },
-      { ai: 139, uv: 53 },
-      { ai: 368, uv: 54 },
+      { ai: 445, uv: 53 },
+      { ai: 139, uv: 54 },
       { ai: 225, uv: 55 },
-      { ai: 445, uv: 56 },
-      { ai: 221, uv: 57 },
-      { ai: 441, uv: 58 },
+      { ai: 368, uv: 56 },
+      { ai: 441, uv: 57 },
+      { ai: 221, uv: 58 },
       { ai: 156, uv: 59 },
       { ai: 383, uv: 60 },
       { ai: 27, uv: 61 },
@@ -207,7 +211,6 @@ export default function MineThing() {
       { ai: 168, uv: 69 },
       { ai: 417, uv: 70 },
       { ai: 193, uv: 71 },
-      // thing
       { ai: 30, uv: 72 },
       { ai: 56, uv: 73 },
       { ai: 286, uv: 74 },
@@ -305,6 +308,307 @@ export default function MineThing() {
       { ai: 229, uv: 166 },
       { ai: 121, uv: 167 },
       { ai: 449, uv: 168 },
+      { ai: 230, uv: 169 },
+      { ai: 450, uv: 170 },
+      { ai: 111, uv: 171 },
+      { ai: 340, uv: 172 },
+      { ai: 343, uv: 173 },
+      { ai: 114, uv: 174 },
+      { ai: 197, uv: 175 },
+      { ai: 196, uv: 176 },
+      { ai: 419, uv: 177 },
+      { ai: 120, uv: 178 },
+      { ai: 349, uv: 179 },
+      { ai: 174, uv: 180 },
+      { ai: 399, uv: 181 },
+      { ai: 47, uv: 182 },
+      { ai: 277, uv: 183 },
+      { ai: 346, uv: 184 },
+      { ai: 116, uv: 185 },
+      { ai: 117, uv: 186 },
+      { ai: 345, uv: 187 },
+      { ai: 348, uv: 188 },
+      { ai: 119, uv: 189 },
+      { ai: 437, uv: 190 },
+      { ai: 217, uv: 191 },
+      { ai: 118, uv: 192 },
+      { ai: 347, uv: 193 },
+      { ai: 447, uv: 194 },
+      { ai: 227, uv: 195 },
+      { ai: 195, uv: 196 },
+      { ai: 3, uv: 197 },
+      { ai: 248, uv: 198 },
+      { ai: 329, uv: 199 },
+      { ai: 100, uv: 200 },
+      { ai: 456, uv: 201 },
+      { ai: 236, uv: 202 },
+      { ai: 234, uv: 203 },
+      { ai: 454, uv: 204 },
+      { ai: 355, uv: 205 },
+      { ai: 126, uv: 206 },
+      { ai: 198, uv: 207 },
+      { ai: 420, uv: 208 },
+      { ai: 101, uv: 209 },
+      { ai: 330, uv: 210 },
+      { ai: 5, uv: 211 },
+      { ai: 51, uv: 212 },
+      { ai: 281, uv: 213 },
+      { ai: 363, uv: 214 },
+      { ai: 134, uv: 215 },
+      { ai: 371, uv: 216 },
+      { ai: 142, uv: 217 },
+      { ai: 209, uv: 218 },
+      { ai: 429, uv: 219 },
+      { ai: 131, uv: 220 },
+      { ai: 360, uv: 221 },
+      { ai: 123, uv: 222 },
+      { ai: 352, uv: 223 },
+      { ai: 45, uv: 224 },
+      { ai: 4, uv: 225 },
+      { ai: 275, uv: 226 },
+      { ai: 220, uv: 227 },
+      { ai: 440, uv: 228 },
+      { ai: 50, uv: 229 },
+      { ai: 280, uv: 230 },
+      { ai: 36, uv: 231 },
+      { ai: 49, uv: 232 },
+      { ai: 279, uv: 233 },
+      { ai: 266, uv: 234 },
+      { ai: 344, uv: 235 },
+      { ai: 115, uv: 236 },
+      { ai: 366, uv: 237 },
+      { ai: 137, uv: 238 },
+      { ai: 237, uv: 239 },
+      { ai: 457, uv: 240 },
+      { ai: 102, uv: 241 },
+      { ai: 274, uv: 242 },
+      { ai: 331, uv: 243 },
+      { ai: 44, uv: 244 },
+      { ai: 1, uv: 245 },
+      { ai: 438, uv: 246 },
+      { ai: 129, uv: 247 },
+      { ai: 48, uv: 248 },
+      { ai: 218, uv: 249 },
+      { ai: 278, uv: 250 },
+      { ai: 358, uv: 251 },
+      { ai: 239, uv: 252 },
+      { ai: 459, uv: 253 },
+      { ai: 79, uv: 254 },
+      { ai: 309, uv: 255 },
+      { ai: 219, uv: 256 },
+      { ai: 439, uv: 257 },
+      { ai: 93, uv: 258 },
+      { ai: 323, uv: 259 },
+      { ai: 125, uv: 260 },
+      { ai: 354, uv: 261 },
+      { ai: 64, uv: 262 },
+      { ai: 241, uv: 263 },
+      { ai: 19, uv: 264 },
+      { ai: 461, uv: 265 },
+      { ai: 294, uv: 266 },
+      { ai: 238, uv: 267 },
+      { ai: 458, uv: 268 },
+      { ai: 392, uv: 269 },
+      { ai: 166, uv: 270 },
+      { ai: 455, uv: 271 },
+      { ai: 235, uv: 272 },
+      { ai: 205, uv: 273 },
+      { ai: 425, uv: 274 },
+      { ai: 59, uv: 275 },
+      { ai: 289, uv: 276 },
+      { ai: 203, uv: 277 },
+      { ai: 203, uv: 277 },
+      { ai: 20, uv: 278 },
+      { ai: 250, uv: 279 },
+      { ai: 423, uv: 280 },
+      { ai: 462, uv: 281 },
+      { ai: 242, uv: 282 },
+      { ai: 75, uv: 283 },
+      { ai: 141, uv: 284 },
+      { ai: 94, uv: 285 },
+      { ai: 370, uv: 286 },
+      { ai: 305, uv: 287 },
+      { ai: 240, uv: 288 },
+      { ai: 460, uv: 289 },
+      { ai: 60, uv: 290 },
+      { ai: 290, uv: 291 },
+      { ai: 98, uv: 292 },
+      { ai: 327, uv: 293 },
+      { ai: 376, uv: 294 },
+      { ai: 147, uv: 295 },
+      { ai: 99, uv: 296 },
+      { ai: 328, uv: 297 },
+      { ai: 411, uv: 298 },
+      { ai: 187, uv: 299 },
+      { ai: 97, uv: 300 },
+      { ai: 326, uv: 301 },
+      { ai: 2, uv: 302 },
+      { ai: 206, uv: 303 },
+      { ai: 426, uv: 304 },
+      { ai: 177, uv: 305 },
+      { ai: 401, uv: 306 },
+      { ai: 164, uv: 307 },
+      { ai: 167, uv: 308 },
+      { ai: 393, uv: 309 },
+      { ai: 207, uv: 310 },
+      { ai: 427, uv: 311 },
+      { ai: 165, uv: 312 },
+      { ai: 391, uv: 313 },
+      { ai: 92, uv: 314 },
+      { ai: 322, uv: 315 },
+      { ai: 132, uv: 316 },
+      { ai: 436, uv: 317 },
+      { ai: 361, uv: 318 },
+      { ai: 216, uv: 319 },
+      { ai: 213, uv: 320 },
+      { ai: 433, uv: 321 },
+      { ai: 37, uv: 322 },
+      { ai: 267, uv: 323 },
+      { ai: 0, uv: 324 },
+      { ai: 39, uv: 325 },
+      { ai: 269, uv: 326 },
+      { ai: 186, uv: 327 },
+      { ai: 410, uv: 328 },
+      { ai: 40, uv: 329 },
+      { ai: 72, uv: 330 },
+      { ai: 11, uv: 331 },
+      { ai: 302, uv: 332 },
+      { ai: 270, uv: 333 },
+      { ai: 73, uv: 334 },
+      { ai: 303, uv: 335 },
+      { ai: 304, uv: 336 },
+      { ai: 74, uv: 337 },
+      { ai: 185, uv: 338 },
+      { ai: 409, uv: 339 },
+      { ai: 12, uv: 340 },
+      { ai: 41, uv: 341 },
+      { ai: 38, uv: 342 },
+      { ai: 268, uv: 343 },
+      { ai: 184, uv: 344 },
+      { ai: 271, uv: 345 },
+      { ai: 408, uv: 346 },
+      { ai: 215, uv: 347 },
+      { ai: 42, uv: 348 },
+      { ai: 272, uv: 349 },
+      { ai: 435, uv: 350 },
+      { ai: 192, uv: 351 },
+      { ai: 416, uv: 352 },
+      { ai: 407, uv: 353 },
+      { ai: 183, uv: 354 },
+      { ai: 191, uv: 355 },
+      { ai: 80, uv: 356 },
+      { ai: 81, uv: 357 },
+      { ai: 82, uv: 358 },
+      { ai: 13, uv: 359 },
+      { ai: 312, uv: 360 },
+      { ai: 311, uv: 361 },
+      { ai: 310, uv: 362 },
+      { ai: 415, uv: 363 },
+      { ai: 308, uv: 364 },
+      { ai: 306, uv: 365 },
+      { ai: 61, uv: 366 },
+      { ai: 76, uv: 367 },
+      { ai: 62, uv: 368 },
+      { ai: 78, uv: 369 },
+      { ai: 292, uv: 370 },
+      { ai: 291, uv: 371 },
+      { ai: 95, uv: 372 },
+      { ai: 88, uv: 373 },
+      { ai: 178, uv: 374 },
+      { ai: 87, uv: 375 },
+      { ai: 14, uv: 376 },
+      { ai: 317, uv: 377 },
+      { ai: 402, uv: 378 },
+      { ai: 318, uv: 379 },
+      { ai: 324, uv: 380 },
+      { ai: 287, uv: 381 },
+      { ai: 57, uv: 382 },
+      { ai: 96, uv: 383 },
+      { ai: 325, uv: 384 },
+      { ai: 212, uv: 385 },
+      { ai: 89, uv: 386 },
+      { ai: 319, uv: 387 },
+      { ai: 432, uv: 388 },
+      { ai: 179, uv: 389 },
+      { ai: 86, uv: 390 },
+      { ai: 316, uv: 391 },
+      { ai: 403, uv: 392 },
+      { ai: 77, uv: 393 },
+      { ai: 15, uv: 394 },
+      { ai: 307, uv: 395 },
+      { ai: 146, uv: 396 },
+      { ai: 375, uv: 397 },
+      { ai: 90, uv: 398 },
+      { ai: 320, uv: 399 },
+      { ai: 214, uv: 400 },
+      { ai: 434, uv: 401 },
+      { ai: 180, uv: 402 },
+      { ai: 404, uv: 403 },
+      { ai: 85, uv: 404 },
+      { ai: 315, uv: 405 },
+      { ai: 91, uv: 406 },
+      { ai: 16, uv: 407 },
+      { ai: 321, uv: 408 },
+      { ai: 43, uv: 409 },
+      { ai: 273, uv: 410 },
+      { ai: 58, uv: 411 },
+      { ai: 181, uv: 412 },
+      { ai: 405, uv: 413 },
+      { ai: 288, uv: 414 },
+      { ai: 84, uv: 415 },
+      { ai: 314, uv: 416 },
+      { ai: 17, uv: 417 },
+      { ai: 367, uv: 418 },
+      { ai: 138, uv: 419 },
+      { ai: 202, uv: 420 },
+      { ai: 422, uv: 421 },
+      { ai: 106, uv: 422 },
+      { ai: 335, uv: 423 },
+      { ai: 182, uv: 424 },
+      { ai: 406, uv: 425 },
+      { ai: 210, uv: 426 },
+      { ai: 430, uv: 427 },
+      { ai: 83, uv: 428 },
+      { ai: 313, uv: 429 },
+      { ai: 135, uv: 430 },
+      { ai: 204, uv: 431 },
+      { ai: 424, uv: 432 },
+      { ai: 364, uv: 433 },
+      { ai: 18, uv: 434 },
+      { ai: 172, uv: 435 },
+      { ai: 397, uv: 436 },
+      { ai: 194, uv: 437 },
+      { ai: 418, uv: 438 },
+      { ai: 211, uv: 439 },
+      { ai: 431, uv: 440 },
+      { ai: 201, uv: 441 },
+      { ai: 421, uv: 442 },
+      { ai: 394, uv: 443 },
+      { ai: 169, uv: 444 },
+      { ai: 200, uv: 445 },
+      { ai: 136, uv: 446 },
+      { ai: 365, uv: 447 },
+      { ai: 32, uv: 448 },
+      { ai: 262, uv: 449 },
+      { ai: 170, uv: 450 },
+      { ai: 395, uv: 451 },
+      { ai: 208, uv: 452 },
+      { ai: 428, uv: 453 },
+      { ai: 199, uv: 454 },
+      { ai: 150, uv: 455 },
+      { ai: 379, uv: 456 },
+      { ai: 140, uv: 457 },
+      { ai: 369, uv: 458 },
+      { ai: 149, uv: 459 },
+      { ai: 378, uv: 460 },
+      { ai: 171, uv: 461 },
+      { ai: 396, uv: 462 },
+      { ai: 175, uv: 463 },
+      { ai: 176, uv: 464 },
+      { ai: 400, uv: 465 },
+      { ai: 148, uv: 466 },
+      { ai: 377, uv: 467 },
+      { ai: 152, uv: 468 },
     ];
     const specificPointColor = "#0000FF"; // Color for the specific points
 
