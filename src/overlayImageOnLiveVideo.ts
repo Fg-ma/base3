@@ -5,8 +5,9 @@ import {
 import * as d3 from "d3";
 import { Delaunay } from "d3-delaunay";
 import imageSrc from "../public/uv2.png";
-import { uvPoints } from "./uvPoints";
+import { olduvPoints, uvPoints } from "./uvPoints";
 import { inv, multiply } from "mathjs";
+import { uvMap } from "./uvMap";
 
 interface Point {
   x: number;
@@ -113,7 +114,11 @@ const overlayImageOnLiveVideo = (
   image: HTMLImageElement
 ) => {
   // Step 1: Convert liveLandmarks to Point[] array
-  const livePoints: Point[] = liveLandmarks.map((l) => ({ x: l.x, y: l.y }));
+  const livePoints: Point[] = liveLandmarks.map((l) => ({
+    x: l.x,
+    y: l.y,
+    z: l.z,
+  }));
 
   // Step 2: Calculate Delaunay Triangulation for live points
   const liveDelaunay = Delaunay.from(
@@ -123,17 +128,6 @@ const overlayImageOnLiveVideo = (
   );
   const liveTrianglesIndices = liveDelaunay.triangles;
 
-  // Step 4: Extract the points that form each triangle
-  const liveTriangles: Point[][] = [];
-  for (let i = 0; i < liveTrianglesIndices.length; i += 3) {
-    const triangle = [
-      livePoints[liveTrianglesIndices[i]],
-      livePoints[liveTrianglesIndices[i + 1]],
-      livePoints[liveTrianglesIndices[i + 2]],
-    ];
-    liveTriangles.push(triangle);
-  }
-
   const overlayDelaunay = Delaunay.from(
     uvPoints,
     (p) => p.u,
@@ -142,117 +136,211 @@ const overlayImageOnLiveVideo = (
   const overlayTrianglesIndices = overlayDelaunay.triangles;
 
   // Step 4: Extract the points that form each triangle
-  const overlayTriangles: Point[][] = [];
-  for (let i = 0; i < overlayTrianglesIndices.length; i += 3) {
-    const triangle = [
-      {
-        x: uvPoints[overlayTrianglesIndices[i]].u,
-        y: uvPoints[overlayTrianglesIndices[i]].v,
-      },
-      {
-        x: uvPoints[overlayTrianglesIndices[i + 1]].u,
-        y: uvPoints[overlayTrianglesIndices[i + 1]].v,
-      },
-      {
-        x: uvPoints[overlayTrianglesIndices[i + 2]].u,
-        y: uvPoints[overlayTrianglesIndices[i + 2]].v,
-      },
-    ];
-    overlayTriangles.push(triangle);
+  const overlayTriangles: [Point, Point, Point][] = [];
+  const liveTriangles: [Point, Point, Point][] = [];
+  // for (let i = 0; i < overlayTrianglesIndices.length; i += 3) {
+  //   if (
+  //     uvPoints[overlayTrianglesIndices[i]] &&
+  //     uvPoints[overlayTrianglesIndices[i + 1]] &&
+  //     uvPoints[overlayTrianglesIndices[i + 2]]
+  //   ) {
+  //     const triangle: [Point, Point, Point] = [
+  //       {
+  //         x: uvPoints[overlayTrianglesIndices[i]].u,
+  //         y: uvPoints[overlayTrianglesIndices[i]].v,
+  //       },
+  //       {
+  //         x: uvPoints[overlayTrianglesIndices[i + 1]].u,
+  //         y: uvPoints[overlayTrianglesIndices[i + 1]].v,
+  //       },
+  //       {
+  //         x: uvPoints[overlayTrianglesIndices[i + 2]].u,
+  //         y: uvPoints[overlayTrianglesIndices[i + 2]].v,
+  //       },
+  //     ];
+  //     overlayTriangles.push(triangle);
+  //   }
+  //   if (
+  //     livePoints[liveTrianglesIndices[i]] &&
+  //     livePoints[liveTrianglesIndices[i + 1]] &&
+  //     livePoints[liveTrianglesIndices[i + 2]]
+  //   ) {
+  //     const triangle2: [Point, Point, Point] = [
+  //       livePoints[liveTrianglesIndices[i]],
+  //       livePoints[liveTrianglesIndices[i + 1]],
+  //       livePoints[liveTrianglesIndices[i + 2]],
+  //     ];
+  //     liveTriangles.push(triangle2);
+  //   }
+  // }
+
+  // drawColorfulTriangles(ctx, overlayTriangles, [0, 0, 1]);
+  // drawColorfulTriangles(ctx, liveTriangles, [1, 0, 0]);
+
+  const triangles = [
+    [153, 159, 145],
+    [145, 159, 160],
+    [145, 160, 144],
+    [144, 160, 161],
+    [144, 161, 163],
+  ];
+
+  for (let i = 0; i < triangles.length; i++) {
+    const matchingEntry1 = uvMap.find((entry) => entry.ai === triangles[i][0]);
+    const matchingEntry2 = uvMap.find((entry) => entry.ai === triangles[i][1]);
+    const matchingEntry3 = uvMap.find((entry) => entry.ai === triangles[i][2]);
+
+    if (matchingEntry1 && matchingEntry2 && matchingEntry3) {
+      overlayTriangles.push([
+        {
+          x: olduvPoints[`${matchingEntry1.uv}`].u,
+          y: olduvPoints[`${matchingEntry1.uv}`].v,
+        },
+        {
+          x: olduvPoints[`${matchingEntry2.uv}`].u,
+          y: olduvPoints[`${matchingEntry2.uv}`].v,
+        },
+        {
+          x: olduvPoints[`${matchingEntry3.uv}`].u,
+          y: olduvPoints[`${matchingEntry3.uv}`].v,
+        },
+      ]);
+    }
+
+    // If a matching entry is found, push its 'ai' value to liveTriangles
+    liveTriangles.push([
+      livePoints[triangles[i][0]],
+      livePoints[triangles[i][1]],
+      livePoints[triangles[i][2]],
+    ]);
   }
 
-  // drawColorfulTriangles(ctx, overlayTriangles);
-  // drawTexturedTriangles(ctx, overlayTriangles, liveTriangles, image);
-};
-
-const calculateTransform = (src: Point[], dest: Point[]) => {
-  const a1 = src[0].x,
-    b1 = src[0].y,
-    a2 = src[1].x,
-    b2 = src[1].y,
-    a3 = src[2].x,
-    b3 = src[2].y;
-
-  const A = [
-    [a1, a2, a3],
-    [b1, b2, b3],
-    [1, 1, 1],
-  ];
-
-  const B = [
-    [dest[0].x, dest[1].x, dest[2].x],
-    [dest[0].y, dest[1].y, dest[2].y],
-    [1, 1, 1],
-  ];
-
-  const A_inv = inv(A);
-  const transformMatrix = multiply(B, A_inv);
-
-  return transformMatrix;
-};
-
-const applyTransform = (ctx: CanvasRenderingContext2D, matrix: number[][]) => {
-  ctx.setTransform(
-    matrix[0][0],
-    matrix[1][0],
-    matrix[0][1],
-    matrix[1][1],
-    matrix[0][2],
-    matrix[1][2]
-  );
+  drawColorfulTriangles(ctx, overlayTriangles, [0, 0, 1]);
+  // drawColorfulTriangles(ctx, liveTriangles, [1, 0, 0]);
+  drawTexturedTriangles(ctx, overlayTriangles, liveTriangles, image);
 };
 
 const drawTexturedTriangles = (
   ctx: CanvasRenderingContext2D,
-  trianglesArray: Point[][],
-  positionTriangles: Point[][],
+  srcTrianglesArray: [Point, Point, Point][],
+  destTrianglesArray: [Point, Point, Point][],
   image: HTMLImageElement
 ) => {
-  for (let i = 0; i < trianglesArray.length; i++) {
-    const srcTriangle = trianglesArray[i];
-    const destTriangle = positionTriangles[i];
+  for (
+    let i = 0;
+    i < Math.min(srcTrianglesArray.length, destTrianglesArray.length);
+    i++
+  ) {
+    const srcTriangle = srcTrianglesArray[i];
+    const destTriangle = destTrianglesArray[i];
 
-    // Calculate the transformation matrix
-    const transformMatrix = calculateTransform(srcTriangle, destTriangle);
-
-    ctx.save();
-
-    // Define the destination triangle path
-    ctx.beginPath();
-    ctx.moveTo(
-      destTriangle[0].x * ctx.canvas.width,
-      destTriangle[0].y * ctx.canvas.height
-    );
-    ctx.lineTo(
-      destTriangle[1].x * ctx.canvas.width,
-      destTriangle[1].y * ctx.canvas.height
-    );
-    ctx.lineTo(
-      destTriangle[2].x * ctx.canvas.width,
-      destTriangle[2].y * ctx.canvas.height
-    );
-    ctx.closePath();
-    ctx.clip();
-
-    // Apply the transformation and draw the image
-    applyTransform(ctx, transformMatrix);
-    ctx.drawImage(image, 0, 0);
-
-    ctx.restore();
+    const transformMatrix = computeTransformMatrix(srcTriangle, destTriangle);
+    drawTriangle(ctx, image, srcTriangle, destTriangle, transformMatrix);
   }
+};
+
+const computeTransformMatrix = (
+  src: [Point, Point, Point],
+  dest: [Point, Point, Point]
+) => {
+  const [x0, y0] = [src[0].x, src[0].y];
+  const [x1, y1] = [src[1].x, src[1].y];
+  const [x2, y2] = [src[2].x, src[2].y];
+
+  const [u0, v0] = [dest[0].x, dest[0].y];
+  const [u1, v1] = [dest[1].x, dest[1].y];
+  const [u2, v2] = [dest[2].x, dest[2].y];
+
+  const A = [
+    [x0, y0, 1, 0, 0, 0, -u0 * x0, -u0 * y0],
+    [0, 0, 0, x0, y0, 1, -v0 * x0, -v0 * y0],
+    [x1, y1, 1, 0, 0, 0, -u1 * x1, -u1 * y1],
+    [0, 0, 0, x1, y1, 1, -v1 * x1, -v1 * y1],
+    [x2, y2, 1, 0, 0, 0, -u2 * x2, -u2 * y2],
+    [0, 0, 0, x2, y2, 1, -v2 * x2, -v2 * y2],
+  ];
+
+  const B = [u0, v0, u1, v1, u2, v2];
+
+  const H = solveSystem(A, B);
+
+  return [
+    [H[0], H[1], H[2]],
+    [H[3], H[4], H[5]],
+    [H[6], H[7], 1],
+  ];
+};
+
+const solveSystem = (A: number[][], B: number[]) => {
+  // Use Gaussian elimination to solve the system of linear equations
+  const AB = A.map((row, i) => [...row, B[i]]);
+  const n = AB.length;
+
+  for (let i = 0; i < n; i++) {
+    let maxRow = i;
+    for (let k = i + 1; k < n; k++) {
+      if (Math.abs(AB[k][i]) > Math.abs(AB[maxRow][i])) {
+        maxRow = k;
+      }
+    }
+
+    [AB[i], AB[maxRow]] = [AB[maxRow], AB[i]];
+
+    for (let k = i + 1; k < n; k++) {
+      const factor = AB[k][i] / AB[i][i];
+      for (let j = i; j < n + 1; j++) {
+        AB[k][j] -= factor * AB[i][j];
+      }
+    }
+  }
+
+  const X = new Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) {
+    X[i] = AB[i][n] / AB[i][i];
+    for (let k = i - 1; k >= 0; k--) {
+      AB[k][n] -= AB[k][i] * X[i];
+    }
+  }
+
+  return X;
+};
+
+const drawTriangle = (
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  srcTriangle: [Point, Point, Point],
+  destTriangle: [Point, Point, Point],
+  transformMatrix: number[][]
+) => {
+  ctx.save();
+  ctx.setTransform(
+    transformMatrix[0][0],
+    transformMatrix[1][0],
+    transformMatrix[0][1],
+    transformMatrix[1][1],
+    transformMatrix[0][2],
+    transformMatrix[1][2]
+  );
+  ctx.beginPath();
+  ctx.moveTo(destTriangle[0].x, destTriangle[0].y);
+  ctx.lineTo(destTriangle[1].x, destTriangle[1].y);
+  ctx.lineTo(destTriangle[2].x, destTriangle[2].y);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(image, 0, 0);
+  ctx.restore();
 };
 
 const drawColorfulTriangles = (
   ctx: CanvasRenderingContext2D,
-  trianglesArray: Point[][]
+  trianglesArray: Point[][],
+  rgb: number[]
 ) => {
   for (let i = 0; i < trianglesArray.length; i++) {
     const triangle = trianglesArray[i];
 
     // Define a unique color for each triangle (e.g., random colors)
-    const color = `rgb(${Math.random() * 255}, ${Math.random() * 255}, ${
-      Math.random() * 255
-    })`;
+    const color = `rgb(${rgb[0] * 255}, ${rgb[1] * 255}, ${rgb[2] * 255})`;
     ctx.fillStyle = color;
 
     // Draw the triangle
