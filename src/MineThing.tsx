@@ -12,6 +12,7 @@ import overlayImageOnLiveVideo from "./overlayImageOnLiveVideo";
 import { uvPoints } from "./uvPoints";
 import { uvMap } from "./uvMap";
 import { drawTriangles } from "./drawTriangles";
+import threeInit from "./threeInit";
 
 export default function MineThing() {
   const liveVideoRef = useRef<HTMLVideoElement>(null);
@@ -204,11 +205,27 @@ export default function MineThing() {
         //     : "#FF0000";
         //   liveVideoCtx.current.fill();
         // }
-        overlayImageOnLiveVideo(
-          liveVideoCtx.current,
-          landmarks.slice(0, -10),
-          overlayImageRef.current,
-          resultsCanvasRef.current
+        threeInit(resultsCanvasRef.current).then(
+          ({ canvasWidth, canvasHeight, scene, camera, renderer, texture }) => {
+            if (
+              liveVideoCtx.current &&
+              overlayImageRef.current &&
+              resultsCanvasRef.current
+            ) {
+              overlayImageOnLiveVideo(
+                liveVideoCtx.current,
+                landmarks.slice(0, -10),
+                overlayImageRef.current,
+                resultsCanvasRef.current,
+                canvasWidth,
+                canvasHeight,
+                scene,
+                camera,
+                renderer,
+                texture
+              );
+            }
+          }
         );
       }
     }

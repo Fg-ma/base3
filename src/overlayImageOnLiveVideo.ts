@@ -31,6 +31,12 @@ const triangles = [
   [137, 177, 147],
   [137, 93, 177],
   [93, 132, 177],
+  [345, 346, 352],
+  [346, 280, 352],
+  [447, 345, 352],
+  [447, 352, 366],
+  [447, 366, 454],
+  [454, 366, 323],
 ];
 
 const getUVMap = (uvImage: HTMLImageElement) => {
@@ -132,7 +138,13 @@ export const overlayImageOnLiveVideo = (
   ctx: CanvasRenderingContext2D,
   liveLandmarks: NormalizedLandmarkList,
   image: HTMLImageElement,
-  canvas: HTMLCanvasElement
+  canvas: HTMLCanvasElement,
+  canvasWidth: number,
+  canvasHeight: number,
+  scene: THREE.Scene,
+  camera: THREE.OrthographicCamera,
+  renderer: THREE.WebGLRenderer,
+  texture: THREE.Texture
 ) => {
   // const overlayTriangles: [Point2D, Point2D, Point2D][] = [];
   // const liveTriangles: [Point3D, Point3D, Point3D][] = [];
@@ -178,94 +190,16 @@ export const overlayImageOnLiveVideo = (
   // drawColorfulTriangles(ctx, liveTriangles, [1, 0, 0]);
   // drawTexturedTriangles(overlayTriangles, liveTriangles, canvas);
   const { overlayTriangles, liveTriangles } = getTriangles(livePoints);
-  drawTriangles(overlayTriangles, liveTriangles, canvas);
-};
-
-const drawTexturedTriangles = (
-  srcTrianglesArray: [Point2D, Point2D, Point2D][],
-  destTrianglesArray: [Point3D, Point3D, Point3D][],
-  canvas: HTMLCanvasElement
-) => {
-  const canvasWidth = 320;
-  const canvasHeight = 320;
-
-  canvas.width = canvasWidth;
-  canvas.height = canvasHeight;
-
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(
-    75,
-    canvasWidth / canvasHeight,
-    0.1,
-    1000
+  drawTriangles(
+    overlayTriangles,
+    liveTriangles,
+    canvasWidth,
+    canvasHeight,
+    scene,
+    camera,
+    renderer,
+    texture
   );
-  camera.position.z = 2;
-
-  const renderer = new THREE.WebGLRenderer({ canvas });
-  renderer.setSize(canvasWidth, canvasHeight);
-
-  // Convert normalized coordinates to pixel coordinates for the source triangles
-  const srcTrianglesPixelArray = srcTrianglesArray.map(
-    (triangle) =>
-      triangle.map((point) => ({
-        x: point.x,
-        y: point.y,
-      })) as [Point2D, Point2D, Point2D]
-  );
-
-  // Convert 3D points to pixel coordinates for the destination triangles
-  const destTrianglesPixelArray = destTrianglesArray.map(
-    (triangle) =>
-      triangle.map((point) => ({
-        x: (point.x + 1) / 2,
-        y: (point.y + 1) / 2,
-      })) as [Point2D, Point2D, Point2D]
-  );
-
-  // Material for red triangles (srcTrianglesArray)
-  const redMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-
-  // Material for blue triangles (destTrianglesArray)
-  const blueMaterial = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-
-  // Create geometry and mesh for red triangles
-  srcTrianglesPixelArray.forEach((triangle) => {
-    const geometry = new THREE.BufferGeometry();
-    const vertices: number[] = [];
-    triangle.forEach((point) => {
-      vertices.push(point.x, point.y, 0);
-    });
-    geometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(vertices, 3)
-    );
-    geometry.setIndex([0, 1, 2]);
-    const mesh = new THREE.Mesh(geometry, redMaterial);
-    scene.add(mesh);
-  });
-
-  // Create geometry and mesh for blue triangles
-  destTrianglesPixelArray.forEach((triangle) => {
-    const geometry = new THREE.BufferGeometry();
-    const vertices: number[] = [];
-    triangle.forEach((point) => {
-      vertices.push(point.x, point.y, 0);
-    });
-    geometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(vertices, 3)
-    );
-    geometry.setIndex([0, 1, 2]);
-    const mesh = new THREE.Mesh(geometry, blueMaterial);
-    scene.add(mesh);
-  });
-
-  // Render function
-  const render = () => {
-    renderer.render(scene, camera);
-  };
-
-  render(); // Initial render
 };
 
 const drawColorfulTriangles = (
