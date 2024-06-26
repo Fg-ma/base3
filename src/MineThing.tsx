@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import imageSrc from "../public/john.png";
+import imageSrc from "../public/james.png";
 import {
   FaceMesh,
   NormalizedLandmarkList,
@@ -11,11 +11,13 @@ import { FACEMESH_TESSELATION } from "@mediapipe/face_mesh";
 import overlayImageOnLiveVideo from "./overlayImageOnLiveVideo";
 import { uvPoints } from "./uvPoints";
 import { uvMap } from "./uvMap";
+import { drawTriangles } from "./drawTriangles";
 
 export default function MineThing() {
   const liveVideoRef = useRef<HTMLVideoElement>(null);
   const overlayImageRef = useRef<HTMLImageElement>(null);
   const liveVideoCanvasRef = useRef<HTMLCanvasElement>(null);
+  const resultsCanvasRef = useRef<HTMLCanvasElement>(null);
   const overlayImageCanvasRef = useRef<HTMLCanvasElement>(null);
   const liveVideoCtx = useRef<CanvasRenderingContext2D | null>(null);
   const overlayImageCtx = useRef<CanvasRenderingContext2D | null>(null);
@@ -121,7 +123,8 @@ export default function MineThing() {
       !liveVideoCanvasRef.current ||
       !liveVideoRef.current ||
       !overlayImageRef.current ||
-      !liveVideoCtx.current
+      !liveVideoCtx.current ||
+      !resultsCanvasRef.current
     ) {
       return;
     }
@@ -204,8 +207,8 @@ export default function MineThing() {
         overlayImageOnLiveVideo(
           liveVideoCtx.current,
           landmarks.slice(0, -10),
-          // overlayLandmarksArray[0],
-          overlayImageRef.current
+          overlayImageRef.current,
+          resultsCanvasRef.current
         );
       }
     }
@@ -261,6 +264,7 @@ export default function MineThing() {
         <canvas ref={liveVideoCanvasRef} className='h-1/2'></canvas>
       </div>
       <div className='flex-col w-1/2 h-5/6'>
+        <canvas ref={resultsCanvasRef} className='h-80 w-80'></canvas>
         <img ref={overlayImageRef} src={imageSrc} className='h-1/2 hidden' />
         <canvas ref={overlayImageCanvasRef} className='h-1/2 hidden'></canvas>
       </div>
