@@ -187,7 +187,6 @@ export const overlayImageOnLiveVideo = (
   // }
 
   // drawColorfulTriangles(ctx, overlayTriangles, [0, 0, 1]);
-  // drawColorfulTriangles(ctx, liveTriangles, [1, 0, 0]);
   // drawTexturedTriangles(overlayTriangles, liveTriangles, canvas);
   const { overlayTriangles, liveTriangles } = getTriangles(livePoints);
   drawTriangles(
@@ -200,6 +199,7 @@ export const overlayImageOnLiveVideo = (
     renderer,
     texture
   );
+  // drawColorfulTriangles(ctx, liveTriangles, [1, 0, 0]);
 };
 
 const drawColorfulTriangles = (
