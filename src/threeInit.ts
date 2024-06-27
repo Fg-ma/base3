@@ -1,9 +1,9 @@
 import * as THREE from "three";
-import textureUrl from "../public/james.png";
+import textureUrl from "../public/james2.png";
 
-const threeInit = (canvas: HTMLCanvasElement) => {
-  const canvasWidth = 320;
-  const canvasHeight = 320;
+const threeInit = (canvas: HTMLCanvasElement, video: HTMLVideoElement) => {
+  const canvasWidth = video.clientWidth;
+  const canvasHeight = video.clientHeight;
 
   canvas.width = canvasWidth;
   canvas.height = canvasHeight;
@@ -14,8 +14,8 @@ const threeInit = (canvas: HTMLCanvasElement) => {
     canvasWidth,
     canvasHeight,
     0,
-    -1,
-    1
+    -10,
+    10
   );
 
   const renderer = new THREE.WebGLRenderer({ canvas });

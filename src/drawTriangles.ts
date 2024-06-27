@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { Point2D, Point3D } from "./overlayImageOnLiveVideo";
 
-export const drawTriangles = (
+const drawTriangles = (
   srcTrianglesArray: [Point2D, Point2D, Point2D][],
   destTrianglesArray: [Point3D, Point3D, Point3D][],
   canvasWidth: number,
@@ -11,55 +11,55 @@ export const drawTriangles = (
   renderer: THREE.WebGLRenderer,
   texture: THREE.Texture
 ) => {
-  const addTriangle = (
-    vertices: number[],
-    uv: number[],
-    material: THREE.Material
-  ) => {
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute(
-      "position",
-      new THREE.Float32BufferAttribute(vertices, 3)
-    );
-    geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
-    geometry.setIndex([0, 1, 2]);
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
-  };
+  const positions: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
 
-  srcTrianglesArray.forEach((triangle, index) => {
+  let indexOffset = 0;
+
+  srcTrianglesArray.forEach((triangle, triangleIndex) => {
     const srcVertices: number[] = [];
     const uv: number[] = [];
 
     triangle.forEach((point) => {
-      srcVertices.push(
-        Math.floor(point.x * canvasWidth),
-        Math.floor((1 - point.y) * canvasHeight),
-        0
-      );
-      // Calculate UV coordinates based on triangle position
-      uv.push(point.x, 1 - point.y); // Assuming UV coordinates match vertex positions
+      srcVertices.push(point.x * canvasWidth, (1 - point.y) * canvasHeight, 0);
+      uv.push(point.x, point.y);
     });
 
-    const destTriangle = destTrianglesArray[index];
+    const destTriangle = destTrianglesArray[triangleIndex];
     if (!destTriangle) {
       return;
     }
     const destVertices: number[] = [];
     destTriangle.forEach((point) => {
       destVertices.push(
-        Math.floor(point.x * canvasWidth),
-        Math.floor((1 - point.y) * canvasHeight),
-        0
+        point.x * canvasWidth,
+        (1 - point.y) * canvasHeight,
+        point.z
       );
     });
 
-    const material = new THREE.MeshBasicMaterial({
-      map: texture,
-      side: THREE.DoubleSide,
-    });
-    addTriangle(destVertices, uv, material);
+    positions.push(...destVertices);
+    uvs.push(...uv);
+    indices.push(indexOffset, indexOffset + 1, indexOffset + 2);
+    indexOffset += 3;
   });
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(positions, 3)
+  );
+  geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    side: THREE.DoubleSide,
+  });
+
+  const mesh = new THREE.Mesh(geometry, material);
+  scene.add(mesh);
 
   // Render function
   const render = () => {
@@ -68,3 +68,5 @@ export const drawTriangles = (
 
   render(); // Initial render
 };
+
+export default drawTriangles;

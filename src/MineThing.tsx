@@ -1,17 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import imageSrc from "../public/james.png";
-import {
-  FaceMesh,
-  NormalizedLandmarkList,
-  Results,
-} from "@mediapipe/face_mesh";
+import { FaceMesh, Results } from "@mediapipe/face_mesh";
 import { Camera } from "@mediapipe/camera_utils";
-import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
-import { FACEMESH_TESSELATION } from "@mediapipe/face_mesh";
 import overlayImageOnLiveVideo from "./overlayImageOnLiveVideo";
-import { uvPoints } from "./uvPoints";
-import { uvMap } from "./uvMap";
-import { drawTriangles } from "./drawTriangles";
 import threeInit from "./threeInit";
 
 export default function MineThing() {
@@ -23,7 +14,7 @@ export default function MineThing() {
   const liveVideoCtx = useRef<CanvasRenderingContext2D | null>(null);
   const overlayImageCtx = useRef<CanvasRenderingContext2D | null>(null);
 
-  useEffect(() => {
+  const init = async () => {
     // Load and process target image
     const img = new Image();
     img.src = imageSrc;
@@ -38,9 +29,7 @@ export default function MineThing() {
         }
       }
     };
-  }, []);
 
-  const init = async () => {
     // Setup video capture
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
 
@@ -105,7 +94,6 @@ export default function MineThing() {
     if (
       !liveVideoCanvasRef.current ||
       !liveVideoRef.current ||
-      !overlayImageRef.current ||
       !liveVideoCtx.current ||
       !resultsCanvasRef.current
     ) {
@@ -126,87 +114,19 @@ export default function MineThing() {
       liveVideoCanvasRef.current.height
     );
 
-    const specificPointColor = "#0000FF"; // Color for the specific points
-
     if (results.multiFaceLandmarks) {
       for (const landmarks of results.multiFaceLandmarks) {
-        // drawConnectors(liveVideoCtx.current, landmarks, FACEMESH_TESSELATION, {
-        //   color: "#00FF00",
-        //   lineWidth: 1,
-        // });
-        // drawLandmarks(liveVideoCtx.current, landmarks, {
-        //   color: "#FF0000",
-        //   lineWidth: 1,
-        //   radius: 0.5,
-        // });
-        // const points = new Array(468).fill(0);
-        // for (const key of Object.keys(uvPoints)) {
-        //   points[uvMap[parseInt(key) - 1].ai] = uvPoints[key];
-        //   if (key === "152") {
-        //     console.log(
-        //       uvMap[parseInt(key) - 1],
-        //       uvMap[parseInt(key) - 1].ai,
-        //       uvPoints[key]
-        //     );
-        //   }
-        // }
-        // points[uvMap[151].ai] = uvPoints["152"];
-        // console.log(points);
-        // for (const key of Object.keys(uvPoints)) {
-        //   const isSpecificPoint = uvMap.some((obj) => obj.uv === parseInt(key));
-        //   if (liveVideoCtx.current) {
-        //     const point = uvPoints[key];
-        //     liveVideoCtx.current.beginPath();
-        //     liveVideoCtx.current.arc(
-        //       point.u * liveVideoCtx.current.canvas.width,
-        //       point.v * liveVideoCtx.current.canvas.height,
-        //       1,
-        //       0,
-        //       2 * Math.PI
-        //     );
-        //     liveVideoCtx.current.fillStyle = isSpecificPoint
-        //       ? "#FFFF00"
-        //       : "#FF00FF";
-        //     liveVideoCtx.current.fill();
-        //   }
-        // }
-        // // Draw all landmarks with default color
-        // for (let i = 0; i < landmarks.length; i++) {
-        //   const landmark = landmarks[i];
-        //   const isSpecificPoint = uvMap.some((obj) => obj.ai === i);
-        //   liveVideoCtx.current.beginPath();
-        //   liveVideoCtx.current.arc(
-        //     landmark.x * liveVideoCtx.current.canvas.width,
-        //     landmark.y * liveVideoCtx.current.canvas.height,
-        //     1,
-        //     0,
-        //     2 * Math.PI
-        //   );
-        //   liveVideoCtx.current.fillStyle = isSpecificPoint
-        //     ? specificPointColor
-        //     : "#FF0000";
-        //   liveVideoCtx.current.fill();
-        // }
-        threeInit(resultsCanvasRef.current).then(
+        threeInit(resultsCanvasRef.current, liveVideoRef.current).then(
           ({ canvasWidth, canvasHeight, scene, camera, renderer, texture }) => {
-            if (
-              liveVideoCtx.current &&
-              overlayImageRef.current &&
-              resultsCanvasRef.current
-            ) {
-              overlayImageOnLiveVideo(
-                liveVideoCtx.current,
-                landmarks.slice(0, -10),
-                overlayImageRef.current,
-                resultsCanvasRef.current,
-                canvasWidth,
-                canvasHeight,
-                scene,
-                camera,
-                renderer,
-                texture
-              );
-            }
+            overlayImageOnLiveVideo(
+              landmarks.slice(0, -10),
+              canvasWidth,
+              canvasHeight,
+              scene,
+              camera,
+              renderer,
+              texture
+            );
           }
         );
       }
@@ -227,3 +147,62 @@ export default function MineThing() {
     </div>
   );
 }
+
+// const specificPointColor = "#0000FF"; // Color for the specific points
+// drawConnectors(liveVideoCtx.current, landmarks, FACEMESH_TESSELATION, {
+//   color: "#00FF00",
+//   lineWidth: 1,
+// });
+// drawLandmarks(liveVideoCtx.current, landmarks, {
+//   color: "#FF0000",
+//   lineWidth: 1,
+//   radius: 0.5,
+// });
+// const points = new Array(468).fill(0);
+// for (const key of Object.keys(uvPoints)) {
+//   points[uvMap[parseInt(key) - 1].ai] = uvPoints[key];
+//   if (key === "152") {
+//     console.log(
+//       uvMap[parseInt(key) - 1],
+//       uvMap[parseInt(key) - 1].ai,
+//       uvPoints[key]
+//     );
+//   }
+// }
+// points[uvMap[151].ai] = uvPoints["152"];
+// console.log(points);
+// for (const key of Object.keys(uvPoints)) {
+//   const isSpecificPoint = uvMap.some((obj) => obj.uv === parseInt(key));
+//   if (liveVideoCtx.current) {
+//     const point = uvPoints[key];
+//     liveVideoCtx.current.beginPath();
+//     liveVideoCtx.current.arc(
+//       point.u * liveVideoCtx.current.canvas.width,
+//       point.v * liveVideoCtx.current.canvas.height,
+//       1,
+//       0,
+//       2 * Math.PI
+//     );
+//     liveVideoCtx.current.fillStyle = isSpecificPoint
+//       ? "#FFFF00"
+//       : "#FF00FF";
+//     liveVideoCtx.current.fill();
+//   }
+// }
+// // Draw all landmarks with default color
+// for (let i = 0; i < landmarks.length; i++) {
+//   const landmark = landmarks[i];
+//   const isSpecificPoint = uvMap.some((obj) => obj.ai === i);
+//   liveVideoCtx.current.beginPath();
+//   liveVideoCtx.current.arc(
+//     landmark.x * liveVideoCtx.current.canvas.width,
+//     landmark.y * liveVideoCtx.current.canvas.height,
+//     1,
+//     0,
+//     2 * Math.PI
+//   );
+//   liveVideoCtx.current.fillStyle = isSpecificPoint
+//     ? specificPointColor
+//     : "#FF0000";
+//   liveVideoCtx.current.fill();
+// }

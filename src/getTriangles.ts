@@ -15,13 +15,6 @@ export const getTriangles = (livePoints: Point3D[]) => {
   );
   const liveTrianglesIndices = liveDelaunay.triangles;
 
-  const overlayDelaunay = Delaunay.from(
-    uvPoints,
-    (p) => p.u,
-    (p) => p.v
-  );
-  const overlayTrianglesIndices = overlayDelaunay.triangles;
-
   const overlayTriangles: [Point2D, Point2D, Point2D][] = [];
   const liveTriangles: [Point3D, Point3D, Point3D][] = [];
 
