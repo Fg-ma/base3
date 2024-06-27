@@ -23,24 +23,7 @@ export default function MineThing() {
   const liveVideoCtx = useRef<CanvasRenderingContext2D | null>(null);
   const overlayImageCtx = useRef<CanvasRenderingContext2D | null>(null);
 
-  const overlayLandmarksArray: NormalizedLandmarkList[] = [];
-
   useEffect(() => {
-    // Setup FaceMesh
-    const overlayFaceMesh = new FaceMesh({
-      locateFile: (file) =>
-        `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
-    });
-
-    overlayFaceMesh.setOptions({
-      maxNumFaces: 1,
-      refineLandmarks: true,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5,
-    });
-
-    overlayFaceMesh.onResults(onOverlayResults);
-
     // Load and process target image
     const img = new Image();
     img.src = imageSrc;
@@ -52,7 +35,6 @@ export default function MineThing() {
           overlayImageCanvasRef.current.getContext("2d");
         if (overlayImageCtx.current) {
           overlayImageCtx.current.drawImage(img, 0, 0, img.width, img.height);
-          await overlayFaceMesh.send({ image: img });
         }
       }
     };
@@ -227,49 +209,6 @@ export default function MineThing() {
             }
           }
         );
-      }
-    }
-  };
-
-  const onOverlayResults = (results: Results) => {
-    if (overlayImageCanvasRef.current && overlayImageRef.current) {
-      if (!overlayImageCtx.current) {
-        return;
-      }
-
-      overlayImageCtx.current.clearRect(
-        0,
-        0,
-        overlayImageCanvasRef.current.width,
-        overlayImageCanvasRef.current.height
-      );
-      overlayImageCtx.current.drawImage(
-        overlayImageRef.current,
-        0,
-        0,
-        overlayImageCanvasRef.current.width,
-        overlayImageCanvasRef.current.height
-      );
-
-      if (results.multiFaceLandmarks) {
-        for (const landmarks of results.multiFaceLandmarks) {
-          overlayLandmarksArray.push(landmarks);
-
-          drawConnectors(
-            overlayImageCtx.current,
-            landmarks,
-            FACEMESH_TESSELATION,
-            {
-              color: "#C0C0C0",
-              lineWidth: 2,
-            }
-          );
-          drawLandmarks(overlayImageCtx.current, landmarks, {
-            color: "#FF3030",
-            lineWidth: 2,
-            radius: 1,
-          });
-        }
       }
     }
   };

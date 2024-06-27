@@ -1,8 +1,11 @@
 import { Delaunay } from "d3-delaunay";
 import { Point2D, Point3D } from "./overlayImageOnLiveVideo";
 import { uvPoints } from "./uvPoints";
+import { DelaunayTriangulation } from "./delaunayTriangulation";
 
 export const getTriangles = (livePoints: Point3D[]) => {
+  // const liveDelaunay = new DelaunayTriangulation(livePoints);
+  // console.log(liveDelaunay.getTriangles());
   // Step 2: Calculate Delaunay Triangulation for live points
   const liveDelaunay = Delaunay.from(
     livePoints,
@@ -44,14 +47,14 @@ export const getTriangles = (livePoints: Point3D[]) => {
       overlayTriangles.push(overlayTriangle);
     }
     if (
-      livePoints[liveTrianglesIndices[i]] &&
-      livePoints[liveTrianglesIndices[i + 1]] &&
-      livePoints[liveTrianglesIndices[i + 2]]
+      livePoints[overlayTrianglesIndices[i]] &&
+      livePoints[overlayTrianglesIndices[i + 1]] &&
+      livePoints[overlayTrianglesIndices[i + 2]]
     ) {
       const liveTriangle: [Point3D, Point3D, Point3D] = [
-        livePoints[liveTrianglesIndices[i]],
-        livePoints[liveTrianglesIndices[i + 1]],
-        livePoints[liveTrianglesIndices[i + 2]],
+        livePoints[overlayTrianglesIndices[i]],
+        livePoints[overlayTrianglesIndices[i + 1]],
+        livePoints[overlayTrianglesIndices[i + 2]],
       ];
       liveTriangles.push(liveTriangle);
     }
